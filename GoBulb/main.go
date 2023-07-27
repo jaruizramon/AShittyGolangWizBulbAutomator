@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -20,19 +22,19 @@ var isRunning bool = true
 var BRIGHTNESS = 100
 var uniDim float64 = 100
 
-var r float64 = 201
-var g float64 = 134
+var r float64 = 255
+var g float64 = 0
 var b float64 = 0
 
 var light_maps_lol = map[string]int{
 	"192.168.1.142": 1, // living room window bottom
 	"192.168.1.105": 2, // living room window top
-	"192.168.1.144": 6, // kitchen 1 away
-	"192.168.1.103": 3, // ac living room bottom
-	"192.168.1.141": 4, // ac living room top
-	"192.168.1.143": 5, // kitchen to fridge
-	"192.168.1.145": 8, // bathroom 2
-	"192.168.1.106": 7, // bathroom 1
+	"192.168.1.144": 3, // kitchen 1 away
+	"192.168.1.103": 4, // ac living room bottom
+	"192.168.1.141": 5, // ac living room top
+	"192.168.1.143": 6, // kitchen to fridge
+	"192.168.1.145": 7, // bathroom 2
+	"192.168.1.106": 8, // bathroom 1
 	"192.168.1.107": 9, // bedroom
 
 }
@@ -88,10 +90,41 @@ func main() {
 				b+rand.Float64()*(10 - -10))))
 	}
 	time.Sleep(3 * time.Second)
+	fmt.Println("\n\nDefine final RGB\n\n")
+	var in string = ""
+	fmt.Scanln(&in)
 
-	//DisneyFlick()
-	//RainbowMadness()
-	Cascaron()
+	ss := strings.Split(in, ",")
+	fmt.Println(len(ss))
+
+	r, err := strconv.ParseFloat(ss[0], 64)
+	if err != nil {
+		r = 255.00
+	}
+	g, err := strconv.ParseFloat(ss[1], 64)
+	if err != nil {
+		g = 255.00
+	}
+	b, err := strconv.ParseFloat(ss[2], 64)
+	if err != nil {
+		b = 255.00
+	}
+
+	fmt.Println(r, g, b)
+	fmt.Println("\n\n")
+
+	fmt.Println("\n\n1. Disney  2. Rainbow Madness 3. Cascaron")
+	in = ""
+	fmt.Scanln(&in)
+
+	if in == "1" {
+		DisneyFlick()
+	} else if in == "2" {
+		RainbowMadness()
+	} else if in == "3" {
+		Cascaron()
+	}
+
 }
 
 func FlickerLights(selected_light net.Conn, flickers int, lag time.Duration) {
@@ -207,7 +240,7 @@ func Cascaron() {
 		for bulbIp, _ := range light_maps_lol {
 			selected_light, err := net.Dial("udp", fmt.Sprintf("%s:%s", bulbIp, WIZ_BULB_PORT))
 
-			// FlickerLights(selected_light, 40, 50)
+			//FlickerLights(selected_light, 40, 50)
 			//FlickerLightsRGB(selected_light, 10, 250, 0, 204, 204, 255, 255, 0)
 			//FlickerLightsRGBRand(selected_light, 10, 200)
 			FlickerLightsRGBDimDefaultColour(selected_light, 10, 166, 255, 100, 50)
