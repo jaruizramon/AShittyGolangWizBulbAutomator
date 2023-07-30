@@ -20,7 +20,7 @@ var RGB_MAX float64 = 255
 var RGB_MIN float64 = 0
 var isRunning bool = true
 var BRIGHTNESS = 100
-var uniDim float64 = 100
+var uniDim float64 = 10
 
 var r float64 = 255
 var g float64 = 0
@@ -89,8 +89,7 @@ func main() {
 				g+rand.Float64()*(10 - -10),
 				b+rand.Float64()*(10 - -10))))
 	}
-	time.Sleep(3 * time.Second)
-	fmt.Println("\n\nDefine final RGB\n\n")
+	fmt.Println("\n\nDefine final RGB and dim eg. -> 255,0,0,50 \n\n")
 	var in string = ""
 	fmt.Scanln(&in)
 
@@ -101,28 +100,35 @@ func main() {
 	if err != nil {
 		r = 255.00
 	}
-	g, err := strconv.ParseFloat(ss[1], 64)
+	g, err = strconv.ParseFloat(ss[1], 64)
 	if err != nil {
 		g = 255.00
 	}
-	b, err := strconv.ParseFloat(ss[2], 64)
+	b, err = strconv.ParseFloat(ss[2], 64)
 	if err != nil {
 		b = 255.00
 	}
 
-	fmt.Println(r, g, b)
+	uniDim, err = strconv.ParseFloat(ss[3], 64)
+	if err != nil {
+		uniDim = 10.00
+	}
+
+	fmt.Println(r, g, b, uniDim)
 	fmt.Println("\n\n")
 
-	fmt.Println("\n\n1. Disney  2. Rainbow Madness 3. Cascaron")
+	fmt.Println("\n\n1. Disney  2. Rainbow Madness 3. Cascaron  4. One colour")
 	in = ""
 	fmt.Scanln(&in)
 
 	if in == "1" {
-		DisneyFlick()
+		DisneyFlick(r, g, b)
 	} else if in == "2" {
 		RainbowMadness()
 	} else if in == "3" {
-		Cascaron()
+		Cascaron(r, g, b)
+	} else if in == "4" {
+		SetColour(r, g, b, uniDim)
 	}
 
 }
@@ -162,6 +168,7 @@ func FlickerLightsRGBBright(selected_light net.Conn, flickers int, lag time.Dura
 }
 
 func FlickerLightsRGBRand(selected_light net.Conn, flickers int, lag time.Duration) {
+
 	for i := 0; i <= flickers; i++ {
 		r = GetRandomRangedFloat(55, 255)
 		g = GetRandomRangedFloat(60, 155)
@@ -181,7 +188,31 @@ func FlickerLightsRGBRand(selected_light net.Conn, flickers int, lag time.Durati
 
 }
 
-func DisneyFlick() {
+func SetColour(r float64, g float64, b float64, dim float64) {
+
+	for isRunning {
+		for bulbIp, _ := range light_maps_lol {
+
+			selected_light, err := net.Dial("udp", fmt.Sprintf("%s:%s", bulbIp, WIZ_BULB_PORT))
+			if err != nil {
+				log.Panic()
+			}
+
+			selected_light.Write([]byte(fmt.Sprintf(`{"method": "setPilot", "params":{"state": true, "dimming": %f }}`, dim)))
+			selected_light.Write([]byte(
+				fmt.Sprintf(
+					`{"method": "setPilot", "params":{"state": true, "r": %f, "g": %f, "b": %f}}`,
+					r,
+					g,
+					b)))
+
+		}
+
+		//time.Sleep(1 * time.Second)
+	}
+}
+
+func DisneyFlick(r float64, g float64, b float64) {
 
 	for isRunning {
 		for bulbIp, _ := range light_maps_lol {
@@ -195,9 +226,9 @@ func DisneyFlick() {
 			selected_light.Write([]byte(
 				fmt.Sprintf(
 					`{"method": "setPilot", "params":{"state": true, "r": %f, "g": %f, "b": %f}}`,
-					r+rand.Float64()*(10 - -10),
-					g+rand.Float64()*(10 - -10),
-					b+rand.Float64()*(10 - -10))))
+					r,
+					g,
+					b)))
 
 			time.Sleep(100 * time.Millisecond)
 			_, err = selected_light.Write([]byte(fmt.Sprintf(`{"method": "setPilot", "params":{"state": true, "dimming": %d }}`, 10)))
@@ -214,7 +245,7 @@ func DisneyFlick() {
 	}
 }
 
-func Cascaron() {
+func Cascaron(r float64, g float64, b float64) {
 
 	for isRunning {
 		for bulbIp, _ := range light_maps_lol {
@@ -243,7 +274,7 @@ func Cascaron() {
 			//FlickerLights(selected_light, 40, 50)
 			//FlickerLightsRGB(selected_light, 10, 250, 0, 204, 204, 255, 255, 0)
 			//FlickerLightsRGBRand(selected_light, 10, 200)
-			FlickerLightsRGBDimDefaultColour(selected_light, 10, 166, 255, 100, 50)
+			FlickerLightsRGBDimDefaultColour(selected_light, 50, 166, r, g, b)
 
 			selected_light.Write([]byte(fmt.Sprintf(`{"method": "setPilot", "params":{"state": true, "dimming": %f }}`, 10.00)))
 			if err != nil {
@@ -278,22 +309,22 @@ func RainbowMadness() {
 	for isRunning {
 		for bulbIp, _ := range light_maps_lol {
 
-			r = rand.Float64() * (RGB_MAX - RGB_MIN)
-			g = rand.Float64() * (RGB_MAX - RGB_MIN)
-			b = rand.Float64() * (RGB_MAX - RGB_MIN)
+			tr := rand.Float64() * (RGB_MAX - RGB_MIN)
+			tg := rand.Float64() * (RGB_MAX - RGB_MIN)
+			tb := rand.Float64() * (RGB_MAX - RGB_MIN)
 
 			time.Sleep(MS_LAG * time.Millisecond)
 
 			selected_light, err := net.Dial("udp", fmt.Sprintf("%s:%s", bulbIp, WIZ_BULB_PORT))
 			uniDim = GetRandomRangedFloat(10, 100)
-			selected_light.Write([]byte(fmt.Sprintf(`{"method": "setPilot", "params":{"state": true, "dimming": %f }}`, uniDim)))
+			selected_light.Write([]byte(fmt.Sprintf(`{"method": "setPilot", "params":{"state": true, "dimming": %f, "r": %f, "g": %f, "b": %f} }}`, uniDim, r, g, b)))
 			if err != nil {
 				log.Panic()
 			}
 			time.Sleep(MS_LAG * time.Millisecond)
 			selected_light.Write([]byte(
 				fmt.Sprintf(
-					`{"method": "setPilot", "params":{"state": true, "r": %f, "g": %f, "b": %f}}`, r, g, b)))
+					`{"method": "setPilot", "params":{"state": true, "r": %f, "g": %f, "b": %f}}`, tr, tg, tb)))
 
 			// fmt.Printf("--> LIGHT No. %d  (%s) --> \"r\": %f, \"g\": %f, \"b\": %f", bulbId, bulbIp, r, g, b)
 		}
